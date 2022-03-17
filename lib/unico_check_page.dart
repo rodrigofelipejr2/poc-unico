@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:unico_check/abstracts/IAcessoBio.dart';
+import 'package:unico_check/abstracts/IAcessoBioCamera.dart';
+import 'package:unico_check/result/success/ResultCamera.dart';
+import 'package:unico_check/result/error/ErrorBio.dart';
 import 'package:unico_check/unico_check.dart';
 
+import 'acesso_pass.dart';
+
 class UnicoCheckPage extends StatefulWidget {
-  const UnicoCheckPage({Key? key}) : super(key: key);
+  const UnicoCheckPage({Key key}) : super(key: key);
 
   @override
   _UnicoCheckPageState createState() => _UnicoCheckPageState();
 }
 
-class _UnicoCheckPageState extends State<UnicoCheckPage> implements IAcessoBioSelfie {
-  late final UnicoCheck unicoCheck;
-  late final UnicoConfig unicoConfig;
+class _UnicoCheckPageState extends State<UnicoCheckPage> implements IAcessoBio, IAcessoBioCamera {
+  UnicoCheck unicoCheck;
 
   @override
   void initState() {
@@ -21,30 +26,44 @@ class _UnicoCheckPageState extends State<UnicoCheckPage> implements IAcessoBioSe
   }
 
   void initAcessoBio() {
-    unicoConfig = UnicoConfig(
-      setTimeoutSession: 40.0,
-      setTimeoutToFaceInference: 16.0,
-      androidColorSilhouetteSuccess: "#03fc73",
-      androidColorSilhouetteError: "#fc0303",
-      iosColorSilhouetteSuccess: "#03fc73",
-      iosColorSilhouetteError: "#fc0303",
+    unicoCheck = new UnicoCheck(
+      this,
+      AcessoPass.url,
+      AcessoPass.apiKey,
+      AcessoPass.token,
     );
-
-    unicoCheck = UnicoCheck(context: this, config: unicoConfig);
+    configLayout();
   }
 
-  void openCameraAuto() {
-    unicoCheck.camera!.setAutoCapture(true);
-    unicoCheck.camera!.setSmartFrame(true);
-    unicoCheck.camera!.openCamera();
-    debugPrint('## openSmartCamera $getTime');
+  Future<void> configLayout() async {
+    // --- CUSTOM LAYOUT Android
+    unicoCheck.setAndroidColorBackground("#901850");
+    unicoCheck.setAndroidColorBoxMessage("#901850");
+    unicoCheck.setAndroidColorTextMessage("#901850");
+    unicoCheck.setAndroidColorBackgroundPopupError("#901850");
+    unicoCheck.setAndroidColorTextPopupError("#901850");
+    unicoCheck.setAndroidColorBackgroundButtonPopupError("#901850");
+    unicoCheck.setAndroidColorTextButtonPopupError("#901850");
+    unicoCheck.setAndroidColorBackgroundTakePictureButton("#901850");
+    unicoCheck.setAndroidColorIconTakePictureButton("#901850");
+    unicoCheck.setAndroidColorBackgroundBottomDocument("#901850");
+    unicoCheck.setAndroidColorTextBottomDocument("#901850");
+    unicoCheck.setAndroidColorSilhoutte("#87CEFA", "#87CEFA");
+
+    // --- CUSTOM LAYOUT IOS
+    unicoCheck.setIosColorSilhoutteNeutra("#901850");
+    unicoCheck.setIosColorSilhoutteSuccess("#901850");
+    unicoCheck.setIosColorSilhoutteError("#901850");
+    unicoCheck.setIosColorBackground("#901850");
+    unicoCheck.setIosColorBackgroundBoxStatus("#901850");
+    unicoCheck.setIosColorTextBoxStatus("#901850");
+    unicoCheck.setIosColorBackgroundPopupError("#901850");
+    unicoCheck.setIosColorTextPopupError("#901850");
+    unicoCheck.setIosImageIconPopupError("#901850");
   }
 
-  void openCameraNormal() {
-    unicoCheck.camera!.setAutoCapture(false);
-    unicoCheck.camera!.setSmartFrame(false);
-    unicoCheck.camera!.openCamera();
-    debugPrint('## openManualCamera $getTime');
+  Future<void> initCamera() async {
+    unicoCheck.openCamera;
   }
 
   String get getTime {
@@ -62,58 +81,14 @@ class _UnicoCheckPageState extends State<UnicoCheckPage> implements IAcessoBioSe
             Container(
               margin: const EdgeInsets.all(10),
               child: ElevatedButton(
-                onPressed: openCameraNormal,
+                onPressed: initCamera,
                 child: const Text('Camera normal'),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.all(10),
-              child: ElevatedButton(
-                onPressed: openCameraAuto,
-                child: const Text('Camera inteligente'),
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  @override
-  void onErrorAcessoBio(ErrorBioResponse error) {
-    showToast('Erro ao abrir a camera: ${error.description}');
-    debugPrint('## onErrorAcessoBio $getTime');
-  }
-
-  @override
-  void onErrorSelfie(ErrorBioResponse error) {
-    showToast('Erro ao abrir a camera: ${error.description}');
-    debugPrint('## onErrorSelfie $getTime');
-  }
-
-  @override
-  void onSuccessSelfie(CameraResponse response) {
-    showToast('Sucesso na captura, aqui temos o base64');
-    debugPrint('## onSuccessSelfie $getTime');
-    debugPrint(response.base64);
-  }
-
-  @override
-  void onSystemChangedTypeCameraTimeoutFaceInference() {
-    showToast('Sistema trocou o tipo da camera!');
-    debugPrint('## onSystemChangedTypeCameraTimeoutFaceInference $getTime');
-  }
-
-  @override
-  void onSystemClosedCameraTimeoutSession() {
-    showToast("Sistema fechou a camera!");
-    debugPrint('## onSystemClosedCameraTimeoutSession $getTime');
-  }
-
-  @override
-  void onUserClosedCameraManually() {
-    showToast('Usuário fechou camera manualmente!');
-    debugPrint('## onUserClosedCameraManually $getTime');
   }
 
   void showToast(String msg) {
@@ -124,5 +99,44 @@ class _UnicoCheckPageState extends State<UnicoCheckPage> implements IAcessoBioSe
       backgroundColor: Colors.amber,
       fontSize: 14,
     );
+  }
+
+  @override
+  void onErrorCamera(ErrorBio errorBio) {
+    showToast('Erro ao abrir a camera: ${errorBio.description}');
+    debugPrint('## onErrorAcessoBio $getTime');
+  }
+
+  @override
+  void onErrorDocumentInsert(String error) {
+    // showToast('Erro ao : ${error}');
+    debugPrint('## onErrorDocumentInsert $getTime');
+  }
+
+  @override
+  void onSuccessCamera(ResultCamera result) {
+    showToast('Sucesso na captura, aqui temos o base64');
+    debugPrint('## onSuccessCamera $getTime');
+    debugPrint(result.base64);
+  }
+
+  @override
+  void onSucessDocumentInsert(String processId, String typed) {
+    // showToast('Sucesso na : ${error}');
+    debugPrint('## onSucessDocumentInsert $getTime');
+    debugPrint('## processId $processId');
+    debugPrint('## typed $typed');
+  }
+
+  @override
+  void onErrorAcessoBio(ErrorBio errorBio) {
+    showToast('Erro ao abrir a camera: ${errorBio.description}');
+    debugPrint('## onErrorAcessoBio $getTime');
+  }
+
+  @override
+  void userClosedCameraManually() {
+    showToast('Usuário fechou camera manualmente!');
+    debugPrint('## userClosedCameraManually $getTime');
   }
 }
